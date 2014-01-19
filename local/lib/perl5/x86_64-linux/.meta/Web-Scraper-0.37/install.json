@@ -1,0 +1,1 @@
+{"provides":{"Web::Scraper::Filter":{"file":"lib/Web/Scraper/Filter.pm"},"Web::Scraper":{"version":"0.37","file":"lib/Web/Scraper.pm"},"Web::Scraper::LibXML":{"file":"lib/Web/Scraper/LibXML.pm"}},"target":"Web::Scraper","version":"0.37","name":"Web::Scraper","dist":"Web-Scraper-0.37","pathname":"M/MI/MIYAGAWA/Web-Scraper-0.37.tar.gz"}

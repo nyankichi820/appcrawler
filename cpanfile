@@ -1,0 +1,9 @@
+requires 'Error';
+requires "JSON";
+requires "HTML::Scrubber";
+requires "Crypt::SSLeay";
+requires "LWP::Protocol::connect";
+requires "XML::XPath";
+requires "Web::Scraper";
+requires "Class::Accessor::Fast";
+requires "Class::Data::Inheritable";
