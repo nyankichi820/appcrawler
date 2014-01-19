@@ -185,7 +185,6 @@ sub fetch_app{
 	my $self = shift;
 	my %args  = @_;
     my $u = URI->new($args{url});
-    #$u->query_form_hash({start => $args{offset},num => $args{limit}, numChildren=>0 });
 
     my $scraper = scraper {
         process '//entry',  "ranking[]" => scraper {
@@ -252,7 +251,6 @@ sub fetch_review{
 	$self->ua->agent("iTunes/9.2 (Windows; Microsoft Windows 7 Home Premium Edition (Build 7600)) AppleWebKit/533.16");
     $self->ua->default_header('Accept-Language' => "ja",'X-Apple-Store-Front' => '143462-1');
     my $scraper = scraper {
-        #process '//TextView[@topInset="0"][@styleSet="basic13"][@squishiness="1"][@leftInset="0"][@truncation="right"][@textJust="left"][@maxLines="1"]',  "review[]" => scraper {
         process '//TextView',  "review[]" => scraper {
             process '//a[@class="no-nav g-hovercard"][@title]', user_name => 'TEXT';
             process '//a[@class="no-nav g-hovercard"][@data-userid]', user_id => '@data-userid';
@@ -264,7 +262,6 @@ sub fetch_review{
         };
     };
 	my $req = HTTP::Request->new(GET => $u->as_string);
-	#my $req = HTTP::Request->new(GET =>"https://itunes.apple.com/WebObjects/MZStore.woa/wa/viewUsersUserReviews?userProfileId=283467792");
 	my $res = $self->ua->request($req);
 
 	if ($res->is_success) {
