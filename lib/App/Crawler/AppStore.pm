@@ -11,11 +11,27 @@ use URI;
 use URI::QueryParam;
 use Web::Scraper;
 use XML::XPath;
-use Time::Piece;
 use Error qw/:try/;
 use App::Crawler::Exception;
 use base qw(Class::Accessor::Fast Class::Data::Inheritable);
 __PACKAGE__->mk_accessors(qw/ua/);
+
+sub COUNTRIES{
+    return [
+      {name =>   "JP", id => '143462'},
+      {name =>   "US",id => '143441'},
+      {name =>  "CN", id=> '143465'},
+      {name => "KR", id => '143466'},
+    ];
+}
+
+sub country_code{
+    my $country = shift;
+    foreach my $code ( @{COUNTRIES()} ){
+        return $code->{id} if $code->{name} eq $country;
+    }
+}
+
 sub GENRES{
     return  [
     {genre_id => 1, label => 'book', name => '6018'},
@@ -84,6 +100,15 @@ sub review_url{
 	return "https://itunes.apple.com/WebObjects/MZStore.woa/wa/viewContentsUserReviews";
 }
 
+sub search_url{
+	return "http://ax.itunes.apple.com/WebObjects/MZStoreServices.woa/wa/wsSearch";
+}
+
+sub suggest_url{
+	return "https://search.itunes.apple.com/WebObjects/MZSearchHints.woa/wa/hints";
+}
+
+
 sub ranking_url{
 	my %args = @_;
     if ( !$args{genre} ){
@@ -118,6 +143,76 @@ sub AUTOLOAD {
         return $result;
     }
 }
+
+
+sub fetch_search_app{
+	my $self = shift;
+	my %args  = @_;
+	my $u = URI->new(search_url());
+	$u->query_form_hash({country=>$args{country},media=>"software",term=>$args{query}});
+
+	my $req = HTTP::Request->new(GET => $u);
+	my $res = $self->ua->request($req);
+	if ($res->is_success) {
+		return $res->content;
+	}
+	else{
+		throw App::Crawler::Exception::NetworkException("network error");
+	}
+}
+
+sub parse_search_app{
+	my $self = shift;
+	my %args  = @_;
+
+	my $content = $args{content};
+	return [] unless ($content);
+
+	return decode_json($content)->{results};
+}
+
+sub fetch_suggest_app{
+	my $self = shift;
+	my %args  = @_;
+	my $u = URI->new(suggest_url());
+	$u->query_form_hash({clientApplication=>"Software",media=>"software",term=>$args{query}});
+
+	$self->ua->agent("iTunes/9AppStore/2.0 iOS/7.0.2 model/iPhone5,2 (6; dt:82)");
+    $self->ua->default_header('Accept-Language' => "ja",'X-Apple-Store-Front' => country_code($args{country}).'-9,21 t:native');
+	my $req = HTTP::Request->new(GET => $u);
+	my $res = $self->ua->request($req);
+	if ($res->is_success) {
+		return $res->content;
+	}
+	else{
+		throw App::Crawler::Exception::NetworkException("network error");
+	}
+}
+
+sub parse_suggest_app{
+	my $self = shift;
+	my %args  = @_;
+
+	my $content = $args{content};
+	return [] unless ($content);
+
+    my $xpath = XML::XPath->new(xml => $content );
+    my @rankings;
+    my $rank = 1;
+    foreach my $node ( $xpath->find('//array/dict')->get_nodelist ){
+        my $app  = {
+            name  => $node->findnodes( './string[1]')->string_value,
+            point => $node->findnodes( './integer')->string_value,
+            url   => $node->findnodes( './string[2]')->string_value,
+            rank     => $rank,
+        };
+        push @rankings,$app;
+        $rank++;
+    }
+	return \@rankings;
+}
+
+
 
 
 sub fetch_ranking{
@@ -352,6 +447,40 @@ sub parse_review{
     return \@reviews;
 
 }
+
+=head1 NAME
+
+App::Crawler::AppStore - appstore ranking and review, search keyword crawler
+
+=head1 SYNOPSIS
+
+    my $crawler = App::Crawler::AppStore->new();
+    
+    # get ranking
+    my $result = $crawler->get_ranking(category=>{name=>"topfreeapplications"},genre=>{name=>"6018"},limit=>10);
+    
+    # get review
+    my $result = $crawler->get_review(app_id=>"xxxxxxx",page=>10);
+
+    # get app info
+    my $result = $crawler->get_app(app_id=>"xxxxxxx");
+
+    # search app
+    my $result = $crawler->get_search_app(query=>"xxxxxxx");
+
+    # get suggest keyword
+    my $result = $crawler->get_suggest_app(query=>"xxxxxxx");
+
+    # content fetch only
+    my $html = $crawler->fetch_ranking(category=>{name=>"topfreeapplications"},genre=>{name=>"6018"},limit=>10);
+
+    # parse html
+    my $result = $crawler->parse_ranking(content=>$html,category=>{name=>"topfreeapplications"},genre=>{name=>"6018"},limit=>10);
+
+
+
+=cut
+
 
 
 1;

@@ -259,5 +259,29 @@ sub parse_review{
 
 }
 
-
 1;
+
+=head1 NAME
+
+App::Crawler::GooglePlay - google play ranking crawler
+
+=head1 SYNOPSIS
+
+    my $crawler = App::Crawler::GooglePlay->new();
+    
+    # get ranking
+    my $result = $crawler->get_ranking(category=>{name=>"topfreeapplications"},genre=>{name=>"6018"},limit=>10);
+    
+    # get review
+    my $result = $crawler->get_review(app_id=>"xxxxxxx",page=>10);
+
+
+
+=cut
+
+=head1 NOTE
+
+    google play has access limitation. It will be ban if you access violently.
+    If you want more access, please accessed by switching in each time set multiple proxies.
+
+=cut
