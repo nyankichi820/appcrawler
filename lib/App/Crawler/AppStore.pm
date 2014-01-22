@@ -138,8 +138,10 @@ sub AUTOLOAD {
     my ($self,%args) = @_; 
     my ($type) = ( $AUTOLOAD =~ /::get_([a-z]+)$/ );
     if($type){
-        my $content =  $self->fetch_ranking(%args);
-        my $result = $self->parse_ranking(%args,content =>  $content);
+        my $fetch_method = "fetch_$type";
+        my $parse_method = "parse_$type";
+        my $content =  $self->$fetch_method(%args);
+        my $result = $self->$parse_method(%args,content =>  $content);
         return $result;
     }
 }
